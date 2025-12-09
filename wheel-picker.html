@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wheel Picker</title>
+  <style>
+    body { font-family: Arial; text-align: center; padding: 50px; }
+    canvas { border: 2px solid #333; margin: 20px 0; }
+    input, button { padding: 10px; margin: 5px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Wheel Picker</h1>
+  <input type="text" id="itemInput" placeholder="Enter item">
+  <button onclick="addItem()">Add Item</button>
+  <button onclick="spinWheel()">Spin Wheel</button>
+  <button onclick="clearItems()">Clear</button>
+
+  <ul id="itemList"></ul>
+  <canvas id="wheel" width="400" height="400"></canvas>
+  <h2 id="result"></h2>
+
+  <script>
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    let items = [], spinning = false, angle = 0, spinTime = 0;
+
+    function addItem() {
+      const value = document.getElementById('itemInput').value.trim();
+      if(value) { items.push(value); updateItemList(); document.getElementById('itemInput').value=''; drawWheel(); }
+    }
+
+    function clearItems() { items=[]; updateItemList(); drawWheel(); document.getElementById('result').innerText=''; }
+
+    function updateItemList() {
+      const list = document.getElementById('itemList'); list.innerHTML='';
+      items.forEach(item=>{ const li=document.createElement('li'); li.textContent=item; list.appendChild(li); });
+    }
+
+    function drawWheel() {
+      const len=items.length, radius=180;
+      ctx.clearRect(0,0,canvas.width,canvas.height); if(len===0) return;
+      const sliceAngle=(2*Math.PI)/len;
+      for(let i=0;i<len;i++){
+        ctx.fillStyle=`hsl(${i*360/len},70%,60%)`;
+        ctx.beginPath(); ctx.moveTo(200,200); ctx.arc(200,200,radius,sliceAngle*i,sliceAngle*(i+1)); ctx.closePath(); ctx.fill();
+        ctx.save(); ctx.translate(200,200); ctx.rotate(sliceAngle*i+sliceAngle/2); ctx.textAlign="right"; ctx.fillStyle="#000"; ctx.font="16px Arial"; ctx.fillText(items[i],radius-10,0); ctx.restore();
+      }
+      ctx.fillStyle="red"; ctx.beginPath(); ctx.moveTo(200,10); ctx.lineTo(190,30); ctx.lineTo(210,30); ctx.closePath(); ctx.fill();
+    }
+
+    function spinWheel() {
+      if(spinning || items.length===0) return;
+      spinning=true; spinTime=Math.random()*3000+3000; const start=performance.now();
+      function animate(time){
+        const elapsed=time-start;
+        if(elapsed<spinTime){ angle+=(Math.PI*10)/spinTime; ctx.save(); ctx.translate(200,200); ctx.rotate(angle); ctx.translate(-200,-200); drawWheel(); ctx.restore(); requestAnimationFrame(animate); }
+        else{ spinning=false; const finalAngle=angle%(2*Math.PI); const sliceAngle=(2*Math.PI)/items.length; const pickedIndex=Math.floor((2*Math.PI-finalAngle)/sliceAngle)%items.length; document.getElementById('result').innerText="Picked: "+items[pickedIndex]; }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    drawWheel();
+  </script>
+</body>
+</html>
